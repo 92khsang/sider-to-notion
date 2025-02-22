@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
@@ -11,15 +10,11 @@ from app.downloaders.utils import request_html
 
 class Downloader(metaclass=ABCMeta):
     def download_html(
-        self, url: str, downloaded_html: Path | None = None
+        self, url: str, downloaded_html: str | None = None
     ) -> BeautifulSoup:
 
-        if (
-            downloaded_html
-            and downloaded_html.is_file()
-            and downloaded_html.suffix == ".html"
-        ):
-            html_soup = BeautifulSoup(downloaded_html.read_text(), "html.parser")
+        if downloaded_html:
+            html_soup = BeautifulSoup(downloaded_html, "html.parser")
         else:
             parse_url = urlparse(url)
             if parse_url is None:
