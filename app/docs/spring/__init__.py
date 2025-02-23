@@ -8,10 +8,10 @@ from app import extractor, downloader
 from app.docs import DocProcessor, add_processor, DocType
 from app.docs.spring import spring_extractor
 from app.downloader import ExcludeTags
-from app.extractor.models import Element
 
 if TYPE_CHECKING:
-    from app.notion.models import NotionProperty
+    from app.extractor.models import Element
+    from app.notion.models import NotionProperty, NotionBlock
 
 EXCLUDE_TAGS: ExcludeTags = ExcludeTags.from_list(
     [
@@ -46,7 +46,11 @@ class SpringDocProcessor(DocProcessor):
         )
 
     @override
-    def write(self, element: Element, properties: set[NotionProperty]) -> None:
+    def render(self, element: Element) -> list[NotionBlock]:
+        return []
+
+    @override
+    def write(self, blocks: list[NotionBlock], properties: set[NotionProperty]) -> None:
         pass
 
 

@@ -9,7 +9,7 @@ from app.extractor.models import Element
 
 if TYPE_CHECKING:
     from bs4 import BeautifulSoup
-    from app.notion.models import NotionProperty
+    from app.notion.models import NotionProperty, NotionBlock
 
 
 class DocType(StrEnum):
@@ -35,7 +35,8 @@ class DocProcessor(metaclass=ABCMeta):
     def process(self, doc: Doc) -> None:
         html_soup = self.read(doc.url, doc.html_str)
         element = self.extract(html_soup)
-        self.write(element, doc.properties)
+        blocks = self.render(element)
+        self.write(blocks, doc.properties)
 
     @abstractmethod
     def read(self, url: str, html_str: str | None = None) -> BeautifulSoup: ...
@@ -44,7 +45,12 @@ class DocProcessor(metaclass=ABCMeta):
     def extract(self, html_soup: BeautifulSoup) -> Element: ...
 
     @abstractmethod
-    def write(self, element: Element, properties: set[NotionProperty]) -> None: ...
+    def render(self, element: Element) -> list[NotionBlock]: ...
+
+    @abstractmethod
+    def write(
+        self, blocks: list[NotionBlock], properties: set[NotionProperty]
+    ) -> None: ...
 
 
 DOC_PROCESSORS: dict[DocType, DocProcessor] = {}
