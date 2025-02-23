@@ -6,31 +6,31 @@ from typing import TYPE_CHECKING, override
 
 from bs4 import Tag
 
-from app.converters.models import Element
-from app.converters.utils import decompose_translation
+from app.extract.models import Element
+from app.extract.utils import decompose_translation
 
 if TYPE_CHECKING:
     from bs4 import BeautifulSoup
 
 
-class ConvertError(Exception):
+class ExtractError(Exception):
     pass
 
 
-class DocConverter(metaclass=ABCMeta):
+class DocExtractor(metaclass=ABCMeta):
     def __init__(self, soup: BeautifulSoup):
         self.soup = soup
 
-    def convert(self) -> Element:
-        """Convert the root tag into an Element object.
+    def extract(self) -> Element:
+        """Extract the root tag into an Element object.
 
-        The conversion is done by calling: func:`convert_tags_to_element` with the
-        converters and the root tag. The method is abstract and must be
-        implemented by subclasses.
+        The extraction is done by calling: func:`extract_tags_to_element` with the
+        extractors and the root tag.
+        The method is abstract and must be implemented by subclasses.
 
         :return: The Element object representing the root tag.
         """
-        return convert_to_element(self.converters, self.root_tag)
+        return extract_to_element(self.extractors, self.root_tag)
 
     @property
     @abstractmethod
@@ -38,31 +38,31 @@ class DocConverter(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def converters(self) -> list[TagConverter]: ...
+    def extractors(self) -> list[TagExtractor]: ...
 
 
-def find_converter(converters: list[TagConverter], tag: Tag) -> TagConverter | None:
-    for converter in converters:
-        if converter.is_convertable(tag):
-            return converter
+def find_extractor(extractors: list[TagExtractor], tag: Tag) -> TagExtractor | None:
+    for extractor in extractors:
+        if extractor.is_extractable(tag):
+            return extractor
     return None
 
 
-def convert_to_element(
-    converters: list[TagConverter], tag: Tag, parent: Element | None = None
+def extract_to_element(
+    extractors: list[TagExtractor], tag: Tag, parent: Element | None = None
 ) -> Element:
     """
-    Recursively convert HTML tags to `Element` objects.
+    Recursively extract HTML tags to `Element` objects.
 
-    :param converters: a list of `TagConverter` objects to use for conversion
-    :param tag: the `Tag` object to convert
+    :param extractors: a list of `TagExtractor` objects to use for extraction
+    :param tag: the `Tag` object to extract
     :param parent: the `Element`
-    object to append the converted `Element` to, if any,
+    object to append the extracted `Element` to, if any,
 
-    :return: the converted `Element` object
+    :return: the extracted `Element` object
     """
-    converter = find_converter(converters, tag)
-    element = converter.convert(tag) if converter else None
+    extractor = find_extractor(extractors, tag)
+    element = extractor.extract(tag) if extractor else None
 
     for original_child in tag.children:
         if not isinstance(original_child, Tag):
@@ -71,8 +71,8 @@ def convert_to_element(
         child: Tag = copy(original_child)
         original_child.decompose()
 
-        child_element: Element | None = convert_to_element(
-            converters, child, element or parent
+        child_element: Element | None = extract_to_element(
+            extractors, child, element or parent
         )
         if child_element:
             (
@@ -102,25 +102,25 @@ def expand_tag(tag: Tag) -> Element:
     return element
 
 
-class TagConverter:
+class TagExtractor:
 
-    def is_convertable(self, tag: Tag) -> bool:
+    def is_extractable(self, tag: Tag) -> bool:
         return True
 
-    def convert(self, tag: Tag) -> Element:
+    def extract(self, tag: Tag) -> Element:
         """
-        Convert a `Tag` object into an `Element` object.
+        Extract a `Tag` object into an `Element` object.
 
-        :param tag: The `Tag` object to be converted.
-        :return: The converted `Element` object.
+        :param tag: The `Tag` object to be extracted.
+        :return: The extracted `Element` object.
         """
         return Element.from_element(tag)
 
 
-class LastTagConverter(TagConverter):
+class LastTagExtractor(TagExtractor):
 
     @override
-    def convert(self, tag: Tag) -> Element:
+    def extract(self, tag: Tag) -> Element:
 
         copied_tag = copy(tag)
 
@@ -128,7 +128,7 @@ class LastTagConverter(TagConverter):
         while copied_tag.contents:
             child = copied_tag.contents[0]
             if isinstance(child, Tag):
-                child_element = convert_to_element(self.converters(), child, element)
+                child_element = extract_to_element(self.extractors(), child, element)
                 if child_element:
                     element.add_child(child_element)
                 else:
@@ -141,18 +141,18 @@ class LastTagConverter(TagConverter):
         return element
 
     @abstractmethod
-    def converters(self) -> list[TagConverter]: ...
+    def extractors(self) -> list[TagExtractor]: ...
 
 
-class HTagConverter(TagConverter):
+class HTagExtractor(TagExtractor):
     @override
-    def is_convertable(self, tag: Tag) -> bool:
+    def is_extractable(self, tag: Tag) -> bool:
         return tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]
 
     @override
-    def convert(self, tag: Tag) -> Element:
-        if not self.is_convertable(tag):
-            raise ConvertError(f"{tag.name} is not supported")
+    def extract(self, tag: Tag) -> Element:
+        if not self.is_extractable(tag):
+            raise ExtractError(f"{tag.name} is not supported")
 
         decompose_translation(tag)
         return Element.from_element(tag)

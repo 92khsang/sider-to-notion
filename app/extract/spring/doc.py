@@ -6,18 +6,18 @@ from typing import (
     override,
 )
 
-from app.converters.base import DocConverter
-from app.converters.spring.tags import SPRING_TAG_CONVERTERS
+from app.extract.base import DocExtractor
+from app.extract.spring.tags import SPRING_TAG_EXTRACTORS
 
 if TYPE_CHECKING:
     from bs4 import (
         BeautifulSoup,
         Tag,
     )
-    from app.converters.base import TagConverter
+    from app.extract.base import TagExtractor
 
 
-class SpringDocDocConverter(DocConverter):
+class SpringDocDocExtractor(DocExtractor):
 
     def __init__(self, soup: BeautifulSoup):
         super().__init__(soup)
@@ -29,5 +29,5 @@ class SpringDocDocConverter(DocConverter):
 
     @override
     @property
-    def converters(self) -> list[TagConverter]:
-        return SPRING_TAG_CONVERTERS
+    def extractors(self) -> list[TagExtractor]:
+        return SPRING_TAG_EXTRACTORS

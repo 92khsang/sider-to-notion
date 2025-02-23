@@ -4,10 +4,10 @@ from typing import override, NamedTuple
 
 from bs4 import Tag
 
-from app.converters.base import (
-    LastTagConverter,
-    TagConverter,
-    HTagConverter,
+from app.extract.base import (
+    LastTagExtractor,
+    TagExtractor,
+    HTagExtractor,
 )
 
 
@@ -16,7 +16,7 @@ class SpringDivFilter(NamedTuple):
     type: str = "class"
 
 
-class SpringDivTagConverter(TagConverter):
+class SpringDivTagExtractor(TagExtractor):
     DIV_FILTERS: list[SpringDivFilter] = [
         SpringDivFilter(value="preamble", type="id"),
         SpringDivFilter("sect1"),
@@ -41,22 +41,22 @@ class SpringDivTagConverter(TagConverter):
         return None
 
     @override
-    def is_convertable(self, tag: Tag) -> bool:
+    def is_extractable(self, tag: Tag) -> bool:
         if tag.name != "div":
             return False
         return self._find_filter_value(tag) is not None
 
 
-class SpringBaseTagConverter(TagConverter):
+class SpringBaseTagExtractor(TagExtractor):
     @override
-    def is_convertable(self, tag: Tag) -> bool:
+    def is_extractable(self, tag: Tag) -> bool:
         return tag.name in ["article"]
 
 
-class SpringLastTagConverter(LastTagConverter):
+class SpringLastTagExtractor(LastTagExtractor):
 
     @override
-    def is_convertable(self, tag: Tag) -> bool:
+    def is_extractable(self, tag: Tag) -> bool:
         return tag.name in [
             "p",
             "a",
@@ -68,13 +68,13 @@ class SpringLastTagConverter(LastTagConverter):
         ]
 
     @override
-    def converters(self) -> list[TagConverter]:
-        return SPRING_TAG_CONVERTERS
+    def extractors(self) -> list[TagExtractor]:
+        return SPRING_TAG_EXTRACTORS
 
 
-SPRING_TAG_CONVERTERS = [
-    HTagConverter(),
-    SpringBaseTagConverter(),
-    SpringDivTagConverter(),
-    SpringLastTagConverter(),
+SPRING_TAG_EXTRACTORS = [
+    HTagExtractor(),
+    SpringBaseTagExtractor(),
+    SpringDivTagExtractor(),
+    SpringLastTagExtractor(),
 ]
