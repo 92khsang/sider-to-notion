@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import override, NamedTuple, TYPE_CHECKING
+from typing import override, TYPE_CHECKING
 
 from bs4 import Tag
 
@@ -9,46 +9,26 @@ from app.extractor import (
     LastTagExtractor,
     TagExtractor,
     HTagExtractor,
+    DivTagExtractor,
 )
+from app.extractor.models import DivFilter
 
 if TYPE_CHECKING:
     from bs4 import BeautifulSoup
 
 
-class SpringDivFilter(NamedTuple):
-    value: str
-    type: str = "class"
-
-
-class SpringDivTagExtractor(TagExtractor):
-    DIV_FILTERS: list[SpringDivFilter] = [
-        SpringDivFilter(value="preamble", type="id"),
-        SpringDivFilter("sect1"),
-        SpringDivFilter("paragraph"),
-        SpringDivFilter("note"),
-        SpringDivFilter("sect2"),
-        SpringDivFilter("content"),
-        SpringDivFilter("tabs"),
-        SpringDivFilter("title"),
+class SpringDivTagExtractor(DivTagExtractor):
+    DIV_FILTERS: list[DivFilter] = [
+        DivFilter(value="preamble", type="id"),
+        DivFilter("sect1"),
+        DivFilter("paragraph"),
+        DivFilter("sect2"),
+        DivFilter("tabs"),
+        DivFilter("title"),
     ]
 
-    def _find_filter_value(self, tag) -> SpringDivFilter | None:
-        for id_filter in [f for f in self.DIV_FILTERS if f.type == "id"]:
-            if tag.attrs.get("id") == id_filter.value:
-                return id_filter
-
-        for class_filter in [f for f in self.DIV_FILTERS if f.type == "class"]:
-            for tag_classes in tag.attrs.get("class", []):
-                if class_filter.value in tag_classes:
-                    return class_filter
-
-        return None
-
-    @override
-    def is_extractable(self, tag: Tag) -> bool:
-        if tag.name != "div":
-            return False
-        return self._find_filter_value(tag) is not None
+    def __init__(self):
+        super().__init__(self.DIV_FILTERS)
 
 
 class SpringBaseTagExtractor(TagExtractor):

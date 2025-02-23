@@ -3,11 +3,14 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
-from typing import override
+from typing import override, TYPE_CHECKING
 
 from bs4 import Tag
 
 from app.extractor.models import Element
+
+if TYPE_CHECKING:
+    from app.extractor.models import DivFilter
 
 
 class ExtractError(Exception):
@@ -54,6 +57,13 @@ def _expand_tag(tag: Tag) -> Element:
     return element
 
 
+def _find_extractor(extractors: list[TagExtractor], tag: Tag) -> TagExtractor | None:
+    for extractor in extractors:
+        if extractor.is_extractable(tag):
+            return extractor
+    return None
+
+
 def extract_to_element(
     extractors: list[TagExtractor], tag: Tag, parent: Element | None = None
 ) -> Element:
@@ -67,7 +77,7 @@ def extract_to_element(
 
     :return: the extracted `Element` object
     """
-    extractor = find_extractor(extractors, tag)
+    extractor = _find_extractor(extractors, tag)
     element = extractor.extract(tag) if extractor else None
 
     for original_child in tag.children:
@@ -90,16 +100,7 @@ def extract_to_element(
     return element
 
 
-def find_extractor(extractors: list[TagExtractor], tag: Tag) -> TagExtractor | None:
-    for extractor in extractors:
-        if extractor.is_extractable(tag):
-            return extractor
-    return None
-
-
-# Extractor classes
-
-
+# -- Extractor classes --
 class TagExtractor:
     _instance: dict[type, TagExtractor] = {}
 
@@ -160,3 +161,34 @@ class HTagExtractor(TagExtractor):
 
         _decompose_translation(tag)
         return Element.from_element(tag)
+
+
+class DivTagExtractor(TagExtractor):
+
+    def __init__(self, filters: list[DivFilter]):
+        super().__init__()
+        self._filters = filters
+
+    def _find_filter_value(self, tag: Tag) -> DivFilter | None:
+
+        for id_filter in [f for f in self._filters if f.type == "id"]:
+            if tag.attrs.get("id") == id_filter.value:
+                return id_filter
+
+        for class_filter in [f for f in self._filters if f.type == "class"]:
+            for tag_classes in tag.attrs.get("class", []):
+                if class_filter.value in tag_classes:
+                    return class_filter
+
+        return None
+
+    @override
+    def extract(self, tag: Tag) -> Element:
+        div_filter = self._find_filter_value(tag)
+        return Element.from_element(tag, div_filter.value)
+
+    @override
+    def is_extractable(self, tag: Tag) -> bool:
+        if tag.name != "div":
+            return False
+        return self._find_filter_value(tag) is not None

@@ -6,6 +6,7 @@ from app.extractor.core import (
     TagExtractor,
     LastTagExtractor,
     HTagExtractor,
+    DivTagExtractor,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "TagExtractor",
     "LastTagExtractor",
     "HTagExtractor",
+    "DivTagExtractor",
 ]
