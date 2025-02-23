@@ -25,6 +25,13 @@ class Doc:
 
 
 class DocProcessor(metaclass=ABCMeta):
+    _instance: dict[type, DocProcessor] = {}
+
+    def __new__(cls):
+        if cls not in cls._instance:
+            cls._instance[cls] = super().__new__(cls)
+        return cls._instance[cls]
+
     def process(self, doc: Doc) -> None:
         html_soup = self.read(doc.url, doc.html_str)
         element = self.extract(html_soup)
