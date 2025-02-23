@@ -1,51 +1,57 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
+from collections import defaultdict
 from copy import copy
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from bs4 import Tag
 
-from app.extract.models import Element
-from app.extract.utils import decompose_translation
-
-if TYPE_CHECKING:
-    from bs4 import BeautifulSoup
+from app.extractor.models import Element
 
 
 class ExtractError(Exception):
     pass
 
 
-class DocExtractor(metaclass=ABCMeta):
-    def __init__(self, soup: BeautifulSoup):
-        self.soup = soup
-
-    def extract(self) -> Element:
-        """Extract the root tag into an Element object.
-
-        The extraction is done by calling: func:`extract_tags_to_element` with the
-        extractors and the root tag.
-        The method is abstract and must be implemented by subclasses.
-
-        :return: The Element object representing the root tag.
-        """
-        return extract_to_element(self.extractors, self.root_tag)
-
-    @property
-    @abstractmethod
-    def root_tag(self) -> Tag: ...
-
-    @property
-    @abstractmethod
-    def extractors(self) -> list[TagExtractor]: ...
+def _extract_translation(tag: Tag) -> str:
+    return tag.find("sider-trans-text").text.strip()
 
 
-def find_extractor(extractors: list[TagExtractor], tag: Tag) -> TagExtractor | None:
-    for extractor in extractors:
-        if extractor.is_extractable(tag):
-            return extractor
-    return None
+def _decompose_translation(tag: Tag) -> None:
+    element = tag.find("sider-trans")
+    if element:
+        element.decompose()
+
+
+def _extract_attrs(tag: Tag) -> dict[str, list[str]]:
+    attrs = tag.attrs
+    extracted_attrs = defaultdict(list)
+    for key, value in attrs.items():
+        if isinstance(value, str):
+            extracted_attrs[key].append(value)
+        else:
+            extracted_attrs[key].extend(value)
+
+    return extracted_attrs
+
+
+def _expand_tag(tag: Tag) -> Element:
+
+    copied_tag = copy(tag)
+
+    element = Element.from_element(copied_tag)
+
+    while copied_tag.contents:
+        child = copied_tag.contents[0]
+        if isinstance(child, Tag):
+            element.add_child(_expand_tag(child))
+        else:
+            element.add_child(Element.from_element(copy(child)))
+        child.decompose()
+
+    tag.decompose()
+    return element
 
 
 def extract_to_element(
@@ -84,22 +90,14 @@ def extract_to_element(
     return element
 
 
-def expand_tag(tag: Tag) -> Element:
+def find_extractor(extractors: list[TagExtractor], tag: Tag) -> TagExtractor | None:
+    for extractor in extractors:
+        if extractor.is_extractable(tag):
+            return extractor
+    return None
 
-    copied_tag = copy(tag)
 
-    element = Element.from_element(copied_tag)
-
-    while copied_tag.contents:
-        child = copied_tag.contents[0]
-        if isinstance(child, Tag):
-            element.add_child(expand_tag(child))
-        else:
-            element.add_child(Element.from_element(copy(child)))
-        child.decompose()
-
-    tag.decompose()
-    return element
+# Extractor classes
 
 
 class TagExtractor:
@@ -132,7 +130,7 @@ class LastTagExtractor(TagExtractor):
                 if child_element:
                     element.add_child(child_element)
                 else:
-                    element.add_child(expand_tag(child))
+                    element.add_child(_expand_tag(child))
             else:
                 element.add_child(Element.from_element(child))
             child.decompose()
@@ -154,5 +152,5 @@ class HTagExtractor(TagExtractor):
         if not self.is_extractable(tag):
             raise ExtractError(f"{tag.name} is not supported")
 
-        decompose_translation(tag)
+        _decompose_translation(tag)
         return Element.from_element(tag)
