@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-from typing import override, NamedTuple
+from copy import copy
+from typing import override, NamedTuple, TYPE_CHECKING
 
 from bs4 import Tag
 
-from app.extract.base import (
+from app.extractor import (
     LastTagExtractor,
     TagExtractor,
     HTagExtractor,
 )
+
+if TYPE_CHECKING:
+    from bs4 import BeautifulSoup
 
 
 class SpringDivFilter(NamedTuple):
@@ -69,12 +73,23 @@ class SpringLastTagExtractor(LastTagExtractor):
 
     @override
     def extractors(self) -> list[TagExtractor]:
-        return SPRING_TAG_EXTRACTORS
+        return tag_extractors()
 
 
-SPRING_TAG_EXTRACTORS = [
+_SPRING_TAG_EXTRACTORS = [
     HTagExtractor(),
     SpringBaseTagExtractor(),
     SpringDivTagExtractor(),
     SpringLastTagExtractor(),
 ]
+
+
+def tag_extractors() -> list[TagExtractor]:
+    return _SPRING_TAG_EXTRACTORS
+
+
+def root_tag(soup: BeautifulSoup) -> Tag:
+    return copy(soup.find("article", attrs={"class": "doc"}))
+
+
+__all__ = ["tag_extractors", "root_tag"]
