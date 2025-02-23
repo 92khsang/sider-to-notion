@@ -5,9 +5,9 @@ from typing import Final
 from bs4 import BeautifulSoup
 
 from app.core.types import DocType
-from app.downloaders.base import Downloader
-from app.downloaders.spring import SpringDocDownloader
-from app.downloaders.utils import request_html
+from app.download.base import Downloader
+from app.download.spring import SpringDocDownloader
+from app.download.utils import request_html
 
 DOC_DOWNLOADER_MAP: Final[dict[DocType, Downloader]] = {
     DocType.SPRING: SpringDocDownloader(),

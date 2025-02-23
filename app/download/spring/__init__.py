@@ -3,9 +3,9 @@ from __future__ import annotations
 from bs4 import BeautifulSoup
 from typing_extensions import override
 
-from app.downloaders.base import Downloader
-from app.downloaders.models import ExcludeTags
-from app.downloaders.utils import exclude_tags
+from app.download.base import Downloader
+from app.download.models import ExcludeTags
+from app.download.utils import exclude_tags
 
 
 class SpringDocDownloader(Downloader):

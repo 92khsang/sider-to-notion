@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
 
-from app.downloaders.utils import request_html
+from app.download.utils import request_html
 
 
 class Downloader(metaclass=ABCMeta):
@@ -33,7 +33,7 @@ class Downloader(metaclass=ABCMeta):
 
     @staticmethod
     def replace_links(base_url, soup: BeautifulSoup) -> None:
-        for link_tag in ["link", "a"]:
+        for link_tag in ["link", "a", "img"]:
             for tag in soup.find_all(link_tag):
                 href = tag.get("href")
                 if href is None or ".." not in href:
