@@ -84,6 +84,24 @@ def convert_to_element(
     return element
 
 
+def expand_tag(tag: Tag) -> Element:
+
+    copied_tag = copy(tag)
+
+    element = Element.from_element(copied_tag)
+
+    while copied_tag.contents:
+        child = copied_tag.contents[0]
+        if isinstance(child, Tag):
+            element.add_child(expand_tag(child))
+        else:
+            element.add_child(Element.from_element(copy(child)))
+        child.decompose()
+
+    tag.decompose()
+    return element
+
+
 class TagConverter:
 
     def is_convertable(self, tag: Tag) -> bool:
@@ -113,6 +131,8 @@ class LastTagConverter(TagConverter):
                 child_element = convert_to_element(self.converters(), child, element)
                 if child_element:
                     element.add_child(child_element)
+                else:
+                    element.add_child(expand_tag(child))
             else:
                 element.add_child(Element.from_element(child))
             child.decompose()

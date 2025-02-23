@@ -57,7 +57,15 @@ class SpringLastTagConverter(LastTagConverter):
 
     @override
     def is_convertable(self, tag: Tag) -> bool:
-        return tag.name in ["p", "a", "code", "sider-trans-text"]
+        return tag.name in [
+            "p",
+            "a",
+            "span",
+            "code",
+            "sider-trans-text",
+            "table",
+            "img",
+        ]
 
     @override
     def converters(self) -> list[TagConverter]:
