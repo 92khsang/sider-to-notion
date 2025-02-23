@@ -7,6 +7,7 @@ from typing import override, TYPE_CHECKING
 
 from bs4 import Tag
 
+from app.core.decorators import singleton
 from app.extractor.models import Element
 
 if TYPE_CHECKING:
@@ -101,13 +102,8 @@ def extract_to_element(
 
 
 # -- Extractor classes --
+@singleton
 class TagExtractor:
-    _instance: dict[type, TagExtractor] = {}
-
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instance:
-            cls._instance[cls] = super().__new__(cls)
-        return cls._instance[cls]
 
     def is_extractable(self, tag: Tag) -> bool:
         return True

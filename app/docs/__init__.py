@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from app.core.decorators import singleton
 from app.extractor.models import Element
 
 if TYPE_CHECKING:
@@ -24,13 +25,8 @@ class Doc:
     properties: set[NotionProperty] = field(default_factory=lambda: set())
 
 
+@singleton
 class DocProcessor(metaclass=ABCMeta):
-    _instance: dict[type, DocProcessor] = {}
-
-    def __new__(cls):
-        if cls not in cls._instance:
-            cls._instance[cls] = super().__new__(cls)
-        return cls._instance[cls]
 
     def process(self, doc: Doc) -> None:
         html_soup = self.read(doc.url, doc.html_str)
