@@ -78,4 +78,5 @@ desktop.ini
 .env.production
 secrets.toml
 
+assets/
 local/

@@ -6,15 +6,14 @@ authors = [
     {name = "Hayes",email = "92khsang@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "requests >=2.32.3,<3.0.0",
     "beautifulsoup4 >=4.13.0,<5.0.0",
-    "python-dotenv >=1.0.1,<2.0.0"
+    "python-dotenv >=1.0.1,<2.0.0",
+    "tqdm >=4.67.1,<5.0.0",
+    "pynotion @ git+https://github.com/92khsang/pynotion.git@dev"
 ]
-
-[tool.poetry]
-package-mode = false
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
