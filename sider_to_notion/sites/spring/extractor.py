@@ -3,8 +3,9 @@ from typing import override
 
 from bs4 import Tag, BeautifulSoup
 
-from sider_to_notion.extractor import DivFilter
 from sider_to_notion.extractor import (
+    find_div_filter,
+    DivFilter,
     LastTagExtractor,
     TagExtractor,
     HTagExtractor,
@@ -32,6 +33,7 @@ class SpringDivTagExtractor(DivTagExtractor):
         DivFilter(value="colist"),
         DivFilter(value="olist"),
         DivFilter(value="admonitionblock"),
+        DivFilter(value="footnotes", type="id"),
     ]
 
     def __init__(self):
@@ -44,9 +46,15 @@ class SpringBaseTagExtractor(TagExtractor):
         return tag.name in ["article"]
 
 
-class SpringTitleTagExtractor(LastTagExtractor):
+class SpringDivLastTagExtractor(LastTagExtractor):
+    DIV_FILTERS: list[DivFilter] = [
+        DivFilter(value="title"),
+        DivFilter(value="footnote"),
+    ]
+
+    @override
     def is_extractable(self, tag: Tag) -> bool:
-        return tag.name == "div" and "title" in tag.attrs.get("class", [])
+        return tag.name == "div" and find_div_filter(tag, self.DIV_FILTERS) is not None
 
     @override
     def extractors(self) -> list[TagExtractor]:
@@ -54,8 +62,9 @@ class SpringTitleTagExtractor(LastTagExtractor):
 
     @override
     def extract(self, tag: Tag) -> TagElement:
+        div_filter = find_div_filter(tag, self.DIV_FILTERS)
         element = super().extract(tag)
-        element.classification = "title"
+        element.classification = div_filter.classification or div_filter.value
         return element
 
 
@@ -116,7 +125,7 @@ def tag_extractors() -> list[TagExtractor]:
         HTagExtractor(),
         SpringBaseTagExtractor(),
         SpringDivTagExtractor(),
-        SpringTitleTagExtractor(),
+        SpringDivLastTagExtractor(),
         SpringLastTagExtractor(),
         SpringCodeTagExtractor(),
     ]

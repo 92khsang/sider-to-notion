@@ -9,6 +9,7 @@ from .model import TagElement, NavStringElement
 
 __all__ = [
     "extract_to_element",
+    "find_div_filter",
     "ExtractError",
     "TagExtractor",
     "LastTagExtractor",
@@ -74,6 +75,19 @@ def extract_to_element(
             (element or parent).add_child(child_element)
 
     return element
+
+
+def find_div_filter(tag: Tag, filters: list[DivFilter]) -> Optional[DivFilter]:
+    for id_filter in [f for f in filters if f.type == "id"]:
+        if tag.attrs.get("id") == id_filter.value:
+            return id_filter
+
+    for class_filter in [f for f in filters if f.type == "class"]:
+        for tag_classes in tag.attrs.get("class", []):
+            if class_filter.value in tag_classes:
+                return class_filter
+
+    return None
 
 
 class TagExtractor(ABC):
@@ -144,25 +158,13 @@ class DivTagExtractor(TagExtractor):
     def __init__(self, filters: list[DivFilter]):
         self._filters = filters
 
-    def _find_filter_value(self, tag: Tag) -> Optional[DivFilter]:
-        for id_filter in [f for f in self._filters if f.type == "id"]:
-            if tag.attrs.get("id") == id_filter.value:
-                return id_filter
-
-        for class_filter in [f for f in self._filters if f.type == "class"]:
-            for tag_classes in tag.attrs.get("class", []):
-                if class_filter.value in tag_classes:
-                    return class_filter
-
-        return None
-
     @override
     def is_extractable(self, tag: Tag) -> bool:
-        return tag.name == "div" and self._find_filter_value(tag) is not None
+        return tag.name == "div" and find_div_filter(tag, self._filters) is not None
 
     @override
     def extract(self, tag: Tag) -> TagElement:
-        div_filter: Optional[DivFilter] = self._find_filter_value(tag)
+        div_filter: Optional[DivFilter] = find_div_filter(tag, self._filters)
         if div_filter:
             classification: str = (
                 div_filter.classification

@@ -4,6 +4,7 @@ from .model import *
 
 __all__ = [
     "extract_to_element",
+    "find_div_filter",
     "ExtractError",
     "TagExtractor",
     "LastTagExtractor",
