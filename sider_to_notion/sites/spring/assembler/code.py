@@ -37,7 +37,7 @@ def convert_code_block_to_node(parent: BlockTree, tag: TagElement) -> list[Block
 
     code_block = TxCodeBlock(
         code=TxCode(
-            rich_text=[create_tx_rich_text("".join(texts))],
+            rich_text=[create_tx_rich_text(text) for text in texts],
             language=lang,
         )
     )
