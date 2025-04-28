@@ -1,8 +1,10 @@
 from __future__ import annotations as _annotations
 
+import logging
 from collections import deque
 from typing import TYPE_CHECKING, Optional, Union, Iterable
 
+from pydantic import ValidationError
 from pynotion.models import (
     Annotations,
     NotionUrlWrapper,
@@ -95,8 +97,12 @@ def _convert_link_rich_texts(tag: TagElement) -> list[TxRichText]:
         child = tag.children.popleft()
         rich_texts.extend(_extract_rich_texts(child))
 
-    for rich_text in rich_texts:
-        rich_text.text.link = NotionUrlWrapper(url=tag.attrs.get("href"))
+    try:
+        for rich_text in rich_texts:
+            rich_text.text.link = NotionUrlWrapper(url=tag.attrs.get("href"))
+    except ValidationError as e:
+        logging.debug("Failed to convert a link: %s", e)
+
     return rich_texts
 
 
