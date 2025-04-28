@@ -72,6 +72,8 @@ class SpringLastTagExtractor(LastTagExtractor):
     EXTRACT_TAG_MAP = {
         "p": "p",
         "a": "a",
+        "strong": "strong",
+        "em": "em",
         "span": "span",
         "sider-trans-text": "p",
         "table": "table",

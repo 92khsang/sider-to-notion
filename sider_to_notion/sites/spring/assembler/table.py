@@ -66,12 +66,20 @@ def _create_row_blocks(
                 cell_block, _ = convert_text_with_trans_to_block(
                     cell_element, "paragraph"
                 )
+                rich_texts: list[TxRichText] = cell_block.paragraph.rich_text
             else:  # element_type == "td"
                 p_tags = search_child_by_classification(cell_element, "p")
-                _check_length(p_tags, 1)
-                cell_block, _ = convert_text_with_trans_to_block(p_tags[0], "paragraph")
+                if len(p_tags) == 0:
+                    cell_block = create_tx_rich_text("")
+                    rich_texts: list[TxRichText] = [cell_block]
+                else:
+                    _check_length(p_tags, 1)
+                    cell_block, _ = convert_text_with_trans_to_block(
+                        p_tags[0], "paragraph"
+                    )
+                    rich_texts: list[TxRichText] = cell_block.paragraph.rich_text
 
-            cells.append(cell_block.paragraph.rich_text)
+            cells.append(rich_texts)
 
         row_block = TxTableRowBlock(table_row=TxTableRow(cells=cells))
         row_blocks.append(row_block)

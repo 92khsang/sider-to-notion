@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import logging
 from collections import deque
-from typing import TYPE_CHECKING, Optional, Union, Iterable
+from typing import TYPE_CHECKING, Optional, Union, Iterable, Callable
 
 from pydantic import ValidationError
 from pynotion.models import (
@@ -17,7 +17,7 @@ from sider_to_notion.extractor import TagElement, NavStringElement
 if TYPE_CHECKING:
     from pynotion.models import TxRichText
 
-RICH_TEXT_TAGS = ["p", "a", "code", "span"]
+RICH_TEXT_TAGS = ["p", "a", "code", "span", "strong", "em"]
 
 
 def create_tx_rich_text(text: str) -> TxTextRichText:
@@ -87,6 +87,26 @@ def _extract_rich_texts(child) -> list[TxTextRichText]:
     return rich_texts
 
 
+def _convert_styled_rich_texts(
+    tag: TagElement, expected_tag_name: str, style_setter: Callable[[Annotations], None]
+) -> list[TxRichText]:
+    if tag.tag_name != expected_tag_name:
+        raise ValueError(f"Expected {expected_tag_name}, got {tag.tag_name}")
+
+    rich_texts: list[TxRichText] = []
+
+    while tag.children:
+        child = tag.children.popleft()
+        rich_texts.extend(_extract_rich_texts(child))
+
+    for rich_text in rich_texts:
+        annotations = rich_text.annotations or Annotations()
+        style_setter(annotations)
+        rich_text.annotations = annotations
+
+    return rich_texts
+
+
 def _convert_link_rich_texts(tag: TagElement) -> list[TxRichText]:
     if tag.tag_name != "a":
         raise ValueError(f"Expected a, got {tag.tag_name}")
@@ -107,22 +127,27 @@ def _convert_link_rich_texts(tag: TagElement) -> list[TxRichText]:
 
 
 def _convert_code_rich_texts(tag: TagElement) -> list[TxRichText]:
-    if tag.tag_name != "code":
-        raise ValueError(f"Expected code, got {tag.tag_name}")
+    return _convert_styled_rich_texts(
+        tag,
+        expected_tag_name="code",
+        style_setter=lambda annotations: setattr(annotations, "code", True),
+    )
 
-    rich_texts = []
 
-    while tag.children:
-        child = tag.children.popleft()
-        rich_texts.extend(_extract_rich_texts(child))
+def _convert_em_rich_texts(tag: TagElement) -> list[TxRichText]:
+    return _convert_styled_rich_texts(
+        tag,
+        expected_tag_name="em",
+        style_setter=lambda annotations: setattr(annotations, "italic", True),
+    )
 
-    for rich_text in rich_texts:
-        rich_text.annotations = (
-            rich_text.annotations if rich_text.annotations else Annotations()
-        )
-        rich_text.annotations.code = True
 
-    return rich_texts
+def _convert_strong_rich_texts(tag: TagElement) -> list[TxRichText]:
+    return _convert_styled_rich_texts(
+        tag,
+        expected_tag_name="strong",
+        style_setter=lambda annotations: setattr(annotations, "bold", True),
+    )
 
 
 def _jump_to_next_rich_texts(tag: TagElement) -> list[TxRichText]:
@@ -141,5 +166,9 @@ def convert_to_rich_texts(tag: TagElement) -> list[TxRichText]:
             return _convert_link_rich_texts(tag)
         case "code":
             return _convert_code_rich_texts(tag)
+        case "em":
+            return _convert_em_rich_texts(tag)
+        case "strong":
+            return _convert_strong_rich_texts(tag)
         case _:
             return _jump_to_next_rich_texts(tag)
