@@ -28,7 +28,7 @@ def _load_converters():
         importlib.import_module(f"{package}.{modname}")
 
 
-def _collect_child_nodes(parent: "BlockTree", tag: "TagElement") -> list["BlockTree"]:
+def collect_child_nodes(parent: "BlockTree", tag: "TagElement") -> list["BlockTree"]:
     child_nodes: list[BlockTree] = []
 
     while tag.children:
@@ -39,7 +39,7 @@ def _collect_child_nodes(parent: "BlockTree", tag: "TagElement") -> list["BlockT
     return child_nodes
 
 
-for classification_ in ["preamble", "ulist", "olist"]:
-    register(classification_, _collect_child_nodes)
+for classification_ in ["preamble"]:
+    register(classification_, collect_child_nodes)
 
 _load_converters()

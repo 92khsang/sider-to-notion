@@ -19,7 +19,11 @@ from pynotion.models import (
 from sider_to_notion.extractor import TagElement
 from sider_to_notion.sites.models import BlockTree
 from ._registry import CONVERTERS, register
-from ._utils import convert_to_rich_texts, RICH_TEXT_TAGS
+from ._utils import (
+    convert_to_rich_texts,
+    search_child_by_classification,
+    RICH_TEXT_TAGS,
+)
 
 if TYPE_CHECKING:
     from pynotion.models import TxRichText, TxBlock
@@ -136,7 +140,7 @@ def convert_list_item_to_node(
     return list_item_nodes
 
 
-def convert_list_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
+def convert_l_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
     if tag.classification not in ["ul", "ol"]:
         raise ValueError(
             f"Unknown classification {tag.classification}, expected ul or ol"
@@ -152,10 +156,45 @@ def convert_list_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
     return convert_list_item_to_node(parent, list_items, block_type)
 
 
+def convert_list_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
+    if tag.classification not in ["ulist", "olist"]:
+        raise ValueError(
+            f"Unknown classification {tag.classification}, expected ulist or olist"
+        )
+    block_nodes = []
+
+    elements = search_child_by_classification(tag, ["title", "ul", "ol"])
+    title_element = None
+    content_element = None
+
+    for element in elements:
+        if element.classification == "title":
+            title_element = element
+        if element.classification == "ul" or element.classification == "ol":
+            content_element = element
+
+    if title_element:
+        title_block, _ = convert_text_with_trans_to_block(title_element, "toggle")
+
+        title_node = BlockTree(parent, title_block)
+
+        content_nodes = convert_l_to_node(title_node, content_element)
+        title_node.add_child_nodes(content_nodes)
+
+        block_nodes.append(title_node)
+    else:
+        block_nodes = convert_l_to_node(parent, content_element)
+
+    return block_nodes
+
+
 register(
     "paragraph",
     lambda parent, tag: convert_list_item_to_node(parent, deque([tag]), "paragraph"),
 )
 
 for classification in ["ol", "ul"]:
+    register(classification, convert_l_to_node)
+
+for classification in ["ulist", "olist"]:
     register(classification, convert_list_to_node)

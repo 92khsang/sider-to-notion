@@ -10,7 +10,7 @@ from sider_to_notion.sites.models import BlockTree
 from ._registry import register
 from ._utils import extract_content_and_title, create_tx_rich_text
 from .block import convert_block_classification_to_node
-from .text import convert_text_with_trans_to_block, convert_list_to_node
+from .text import convert_text_with_trans_to_block, convert_l_to_node
 
 
 def convert_tabs_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
@@ -35,7 +35,7 @@ def convert_tabs_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
     ul_element = tab_list_element.children.popleft()
     if ul_element.classification != "ul":
         raise ValueError(f"Expected ul, but got {ul_element.classification}")
-    tab_list_nodes: list[BlockTree] = convert_list_to_node(tab_node, ul_element)
+    tab_list_nodes: list[BlockTree] = convert_l_to_node(tab_node, ul_element)
 
     for tab_list_node in tab_list_nodes:
         child = content_element.children.popleft()
