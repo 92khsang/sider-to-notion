@@ -76,3 +76,4 @@ def convert_block_classification_to_node(
 register("imageblock", convert_image_block_to_node)
 register("listingblock", convert_block_classification_to_node)
 register("exampleblock", convert_block_classification_to_node)
+register("sidebarblock", convert_block_classification_to_node)

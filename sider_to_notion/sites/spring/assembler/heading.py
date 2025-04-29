@@ -32,7 +32,7 @@ def convert_heading_to_node(parent: BlockTree, h_tag: "TagElement") -> list[Bloc
     h_txt: NavStringElement = h_tag.children.popleft()
     h_tag_level = int(h_tag_name[1:])
 
-    is_toggleable = h_tag_level in [2, 3, 4]
+    is_toggleable = h_tag_level > 1
     block = tag_clz(
         **{
             attr_name: TxHeading(

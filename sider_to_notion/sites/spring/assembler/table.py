@@ -189,6 +189,9 @@ def convert_note_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
         if not isinstance(cell_element, TagElement):
             continue
 
+        if cell_element.classification == "title":
+            cell_element.classification = "p"
+
         cell_nodes = CONVERTERS[cell_element.classification](parent, cell_element)
         callout_node.add_child_nodes(cell_nodes)
 

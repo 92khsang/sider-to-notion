@@ -26,6 +26,7 @@ class SpringDivTagExtractor(DivTagExtractor):
         DivFilter(value="listingblock"),
         DivFilter(value="imageblock"),
         DivFilter(value="exampleblock"),
+        DivFilter(value="sidebarblock"),
         DivFilter(value="tabs"),
         DivFilter(value="content"),
         DivFilter(value="tablist"),
