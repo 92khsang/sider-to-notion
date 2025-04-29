@@ -188,6 +188,17 @@ def convert_list_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
     return block_nodes
 
 
+def convert_rich_text_to_node(parent: BlockTree, tag: TagElement) -> list[BlockTree]:
+    if tag.classification not in RICH_TEXT_TAGS:
+        raise ValueError(
+            f"Unknown classification {tag.classification}, expected {RICH_TEXT_TAGS}"
+        )
+
+    rich_texts = convert_to_rich_texts(tag)
+    paragraph_block = TxParagraphBlock(paragraph=TxParagraph(rich_text=rich_texts))
+    return [BlockTree(parent, paragraph_block)]
+
+
 register(
     "paragraph",
     lambda parent, tag: convert_list_item_to_node(parent, deque([tag]), "paragraph"),
@@ -198,3 +209,6 @@ for classification in ["ol", "ul"]:
 
 for classification in ["ulist", "olist"]:
     register(classification, convert_list_to_node)
+
+for classification in RICH_TEXT_TAGS:
+    register(classification, convert_rich_text_to_node)
