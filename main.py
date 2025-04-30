@@ -34,7 +34,8 @@ class ProcessConfig:
 
     @property
     def html_output_path(self) -> Path:
-        return self.assets_dir / self.base_url.split("/")[-1]
+        html_name = self.base_url.split("/")[-1]
+        return self.assets_dir / f"{html_name.split('.')[0]}_debug.html"
 
 
 @dataclass
@@ -107,10 +108,10 @@ def process(config: ProcessConfig) -> "BlockTree":
 
     html_text = (config.assets_dir / config.html_file).read_text(encoding="utf-8")
     soup = processor.read(config.base_url, html_text)
-    config.html_output_path.write_text(soup.prettify(), encoding="utf-8")
-
     elements = processor.extract(soup)
+
     if config.debug:
+        config.html_output_path.write_text(soup.prettify(), encoding="utf-8")
         print_element_tree(elements)
 
     block_tree = processor.assemble(elements)

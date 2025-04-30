@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Self, Any, Optional
 from uuid import UUID
 
 from pynotion import PyNotion
+from pynotion.core.errors import NotionAPIError
 from tqdm import tqdm
 
 if TYPE_CHECKING:
@@ -78,16 +79,26 @@ class NotionRenderer:
                 self._progress_bar.update(1)
             return
 
-        try:
-            blocks = self._pynotion.blocks.append_block_children(
-                parent_id=parent_id,
-                children=[b.tx_block for b in tree.children],
-            )
-        except Exception as e:
-            logging.error(
-                f"Failed to append blocks: parent_id={parent_id}, block: {tree.tx_block.model_dump(mode='json', exclude_none=True)}, error: {e}"
-            )
-            raise
+        retry = 0
+        while retry < 3:
+            try:
+                blocks = self._pynotion.blocks.append_block_children(
+                    parent_id=parent_id,
+                    children=[b.tx_block for b in tree.children],
+                )
+                break
+            except Exception as e:
+                if isinstance(e, NotionAPIError) and e.status == 502:
+                    retry += 1
+                    logging.warning(
+                        f"Failed to append blocks because of bad gateway, retrying {retry}..."
+                    )
+                    continue
+
+                logging.error(
+                    f"Failed to append blocks: parent_id={parent_id}, block: {tree.tx_block.model_dump(mode='json', exclude_none=True)}, error: {e}"
+                )
+                raise
 
         if len(tree.children) != len(blocks.results):
             raise ValueError(
